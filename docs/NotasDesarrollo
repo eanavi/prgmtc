@@ -1,0 +1,24 @@
+Esquemas
+
+Para diferenciar las tablas en la base de datos se crearan Esquemas
+
+public  donde estan las tablas del sistema
+seg     Seguridad, donde se almacenan las tablas de seguridad
+
+
+Para crear tablas con informacion geoespacial
+
+    1. se debe hacer correr "Application Stack Builder" seleccionar la extesion PostGis
+    2. descargar e instalar la extension
+
+    una vez instalado el PostGis se debe crear una consulta en la base de datos donde se 
+    almacenaran los puntos geoespaciales con 
+
+    "create extension PostGis;"
+
+    En el programa Python en el modelo 
+    se debe incorporar el paquete geoalchemy2 con "pip install geoalchemy2"
+
+    from geoalchemy2 import Geometry
+    localizacion = db.Column(Geometry('POINT'))
+

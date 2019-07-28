@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block contenido %}
+<div>
+	<h1>Credenciales</h1>
+	<br>
+	{% from 'macro.html' import render_field %}
+	<form class="pure-form pure-form-aligned" method="POST">
+		<fieldset>
+			<div class="pure-control-group">
+				{{ render_field(form.usuario, required="required") }}
+			</div>
+			<div class="pure-control-group">
+				{{ render_field(form.clave, required="required", title="La Clave es un campo obligatorio") }}
+			</div>
+			<div class="pure-controls">
+				{{ render_field(form.submit, class="pure-button pure-button-primary") }}
+			</div>
+		</fieldset>
+	</form>
+</div>
+{% endblock %}

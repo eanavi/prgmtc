@@ -1,0 +1,531 @@
+{% extends 'base.html' %}
+{% block busqueda %}
+<script type="text/javascript">
+
+	window.onload = init;
+
+	function init(){
+
+	    document.getElementById('btnBuscarEmpresa').onclick = buscaEmpresa;
+	    document.getElementById('btnNueva').onclick = nuevoRegistro;
+	    document.getElementById('dtGrilla').style.display = 'none';
+	    document.getElementById('dtEmpresa').style.display = 'none';
+	    document.getElementById('dtDireccion').style.display = 'none';
+	    document.getElementById('dtTelefono').style.display = 'none';
+	    document.getElementById('dtCorreo').style.display = 'none';
+	    document.getElementById('busNit').value = '';
+	    document.getElementById('busNombre').value = '';
+	    document.getElementById('busSigla').value = '';
+	}
+
+	function nuevoRegistro(){
+		document.getElementById('dtGrilla').style.display = 'none';
+		document.getElementById('dtEmpresa').style.display = 'inline';
+		document.getElementById('dtDireccion').style.display = 'inline';
+		document.getElementById('dtTelefono').style.display = 'inline';
+		document.getElementById('dtCorreo').style.display = 'inline';
+		document.getElementById('btnModificar').style.display = 'none';
+		document.getElementById('btnCrear').style.display = 'inline';
+		document.getElementById('idempresa').value = '';
+		document.getElementById('nit').value = '';
+		document.getElementById('nombre').value = '';
+		document.getElementById('sigla').value = '';
+	}
+
+	function buscaEmpresa(){
+		var sw = false;
+		document.getElementById('dtEmpresa').style.display = 'none';
+	    document.getElementById('dtDireccion').style.display = 'none';
+	    document.getElementById('dtTelefono').style.display = 'none';
+	    document.getElementById('dtCorreo').style.display = 'none';
+		var valores = '{';
+		var frm = document.getElementById("frmBusqueda");
+		for (var i=0; i<frm.length;i++)
+			if (frm.elements[i].type == "text"){
+				valores = valores + '"' + frm.elements[i].id + '"'  + ':"' + frm.elements[i].value + '",';
+				if(frm.elements[i].value != ""){
+					sw = true;
+				};
+			};
+		valores = valores.substr(0, (valores.length - 1)) + '}';
+
+		if (sw){
+			var objx = new XMLHttpRequest()
+			objx.onreadystatechange = function(){
+				if (objx.readyState == 4){
+					if (objx.status == 200)
+						var res = JSON.parse(objx.responseText);
+						if (res.length >0){
+							blanquear('tbEmp');
+							for(var i=0; i<res.length; i++){
+								var fil = tbl.insertRow();
+								var celda1 = fil.insertCell(0);
+								var celda2 = fil.insertCell(1);
+								var celda3 = fil.insertCell(2);
+								var celda4 = fil.insertCell(3);
+								var celda5 = fil.insertCell(4);
+								var celda6 = fil.insertCell(5);
+								celda1.innerHTML = res[i].id;
+								celda2.innerHTML = res[i].nit;
+								celda3.innerHTML = res[i].nombre;
+								celda4.innerHTML = res[i].sigla;
+
+								var lk = document.createElement('a');
+								lk.innerHTML = 'editar';
+								lk.setAttribute('href', '#');
+								lk.setAttribute('onclick', 'cargarEid(' + res[i].id + ');')
+								celda5.appendChild(lk);
+
+								var lnk = document.getElementById('accionlnk');
+
+								if (lnk.value != ''){
+									var celda6 = fil.insertCell(7);
+									var lnk2 = document.createElement('a')
+									lnk2.innerHTML = lnk.value;
+									lnk2.setAttribute('href','/' + lnk.value + '/' + res[i].id);
+									celda6.appendChild(lnk2);
+								}
+
+							}
+
+							document.getElementById('dtGrilla').style.display = 'inline';
+
+						}else{
+							alert('No existen registros con esos criterios de Búsqueda');
+						}
+				}
+			}
+			
+			
+			objx.open('POST', '/buscaEmpresa');
+			objx.setRequestHeader('Content-Type','application/json');
+			objx.send(valores);
+		}
+		else{
+			alert('Digite algun criterio de busqueda');
+			document.getElementById('busNit').focus();
+		};
+	}
+
+	function cargarEid(idempresa){
+		/*Se almacena el id de la persona por si quiere editar datos de direccion y adicionales*/
+		var xhr = new XMLHttpRequest()
+		xhr.onreadystatechange = function(){
+			if (xhr.readyState == 4){
+				if(xhr.status != 200){
+					alert('Error de conexion')
+				}else{
+					var resp = JSON.parse(xhr.responseText);
+					se = document.getElementById('ext');
+					for (var i=0; i < se.length; i++){
+						if (se[i].value == resp.Empresa.ext){
+							se[i].selected = true;
+						};
+					};
+					document.getElementById('idempresa').value = resp.Empresa.idempresa;
+					document.getElementById('nit').value = resp.Empresa.nit;
+					document.getElementById('nombre').value = resp.Empresa.nombre;
+					document.getElementById('sigla').value = resp.Empresa.sigla;
+					document.getElementById('btnModificar').style.display = 'inline';
+					document.getElementById('btnModificar').disabled = false;
+					document.getElementById('btnCrear').style.display = 'none';
+					document.getElementById('dtEmpresa').style.display = 'inline';
+					document.getElementById('dtDireccion').style.display = 'none';
+					document.getElementById('dtCorreo').style.display = 'none';
+					document.getElementById('dtTelefono').style.display = 'none';
+				};
+			};
+		};
+
+		xhr.open('POST', '/cargarEmpresaid/' + idempresa);
+		xhr.send();
+	}
+
+	function cargarP(nit){
+		var xhr = new XMLHttpRequest()
+		xhr.onreadystatechange = function(){
+			if(xhr.readyState == 4){
+				if (xhr.status != 200){
+					alert('Error de conexion');
+				}
+				else{
+					var resp = JSON.parse(xhr.responseText);
+
+					document.getElementById('idempresa').value = resp.Empresa.idempresa;
+					document.getElementById('nit').value = resp.Empresa.nit;
+					document.getElementById('nombre').value = resp.Empresa.nombre;
+					document.getElementById('sigla').value = resp.Empresa.sigla;
+					document.getElementById('btnModificar').style.display = 'inline';
+					document.getElementById('btnCrear').style.display = 'none';
+					document.getElementById('dtEmpresa').style.display = 'inline';
+					document.getElementById('dtDireccion').style.display = 'none';
+
+				}	
+			}
+		}
+
+		xhr.open('POST', '/cargarEmpresa/' + nit)
+		xhr.send()
+	}
+
+	function buscanit(cib){
+		if(cib.value == ''){
+			document.getElementById('nit').focus()
+		} else {
+				var xhr = new XMLHttpRequest()
+				xhr.onreadystatechange = function(){
+					if(xhr.readyState == 4){
+						if (xhr.status != 200){
+							alert('Error de conexion')
+						} 
+						else{
+							var response = JSON.parse(xhr.responseText)
+							if (response.registros > 0)
+							{
+								document.getElementById('btnModificar').style.display = 'inline';
+								document.getElementById('btnCrear').style.display = 'none';
+								cargarP(cib.value);
+							}
+							else{
+								document.getElementById('idempresa').value = '';
+								document.getElementById('nit').value = '';
+								document.getElementById('nombre').value = '';
+								document.getElementById('sigla').value = '';
+								document.getElementById('btnModificar').style.display = 'none';
+								document.getElementById('btnCrear').style.display='inline';
+								document.getElementById('ext').focus();
+							}
+						}
+					}
+				}
+
+			xhr.open('POST', cib.dataset.dir + cib.value)
+			xhr.send()
+			}
+	}
+
+
+
+	function valida(formu, ruta){
+		sw = formu.checkValidity();
+
+		if (sw){
+			var res = '{"Persona":{'
+			for (var i = 0; i < formu.length; i++){
+				switch(formu.elements[i].type){
+					case "text":
+					case "date":
+						res = res + '"' + formu.elements[i].id + '":"' + formu.elements[i].value + '",';
+					break;
+
+					case "hidden":
+						if (formu.elements[i].value != "")
+							res = res + '"' + formu.elements[i].id + '":"' + formu.elements[i].value + '",'
+					break;
+
+					case "select-one":
+						res = res + '"' + formu.elements[i].id + '":"' + formu.elements[i].options[formu.elements[i].selectedIndex].value + '",';
+					break;
+				}
+			};
+			res = res.substr(0, (res.length-1)) + '}}';
+
+			var xhr = new XMLHttpRequest();
+			xhr.onreadystatechange = function(){
+				if(xhr.readyState == 4)
+					if(xhr.status == 200){
+						resp = JSON.parse(xhr.responseText);
+						if (resp.resultado == 'Ok'){
+							blanquear('tbEmp');
+
+							tbl = document.getElementById('tbEmp');
+							var fil = tbl.insertRow();
+							var celda1 = fil.insertCell(0);
+							var celda2 = fil.insertCell(1);
+							var celda3 = fil.insertCell(2);
+							var celda4 = fil.insertCell(3);
+							var celda5 = fil.insertCell(4);
+
+							celda1.innerHTML = resp.Empresa.id;
+							celda2.innerHTML = resp.Empresa.nit; 
+							celda3.innerHTML = resp.Empresa.nombre;
+							celda4.innerHTML = resp.Empresa.sigla;
+
+							var lk = document.createElement('a');
+							lk.innerHTML = 'editar';
+							lk.setAttribute('href', '#');
+							lk.setAttribute('onclick', 'cargarEid(' + resp.Empresa.id + ');')
+							celda5.appendChild(lk);
+
+							var lnk = document.getElementById('accionlnk').value
+
+							if (lnk != ''){
+								var celda6 = fil.insertCell(5);
+								var lnk = document.createElement('a')
+								lnk.innerHTML = lnk;
+								lnk.setAttribute('href','/' + lnk + '/' + resp.Empresa.id);
+								celda6.appendChild(lnk);
+							}
+
+							document.getElementById('dtGrilla').style.display = 'inline';
+							document.getElementById('dtEmpresa').style.display = 'none';
+						} else
+							alert('Algun error en el almacenamiento');
+					};
+			};
+			xhr.open('POST', ruta);
+			xhr.setRequestHeader('Content-Type','application/json');
+			xhr.send(res);
+		}
+		return sw;
+	}
+
+	function calEdad(fecha){
+		var hoy = new Date();
+		var cumples = new Date(fecha);
+
+		var anio = hoy.getFullYear() - cumples.getFullYear();
+		var mes = hoy.getMonth() - cumples.getMonth();
+
+		cumples.setFullYear(hoy.getFullYear());
+
+		if (hoy < cumples) {
+			anio--;
+		}
+		return(anio);
+	}
+
+	function blanquear(elemento){
+		tbl = document.getElementById(elemento)
+		while(tbl.hasChildNodes()){
+			tbl.removeChild(tbl.firstChild);
+		};
+	}
+
+	function masDireccion(){
+		pnd  = document.getElementById('dtDireccion')
+
+	}
+
+	function masFormularios(){
+		idPersona = document.getElementById('idpersona').value
+		if (idPersona != ""){
+			blanquear('direc');
+			var xhr = new XMLHttpRequest();
+			xhr.onreadystatechange = function(){
+				if (xhr.readyState == 4)
+					if(xhr.status == 200){
+						resp = JSON.parse(xhr.responseText)
+
+						for (var j=0; j<resp.Persona.Direccion.length; j++){
+							frm = document.createElement('form');
+							if (j <= 9)
+								subin = '0' 
+							else 
+								subin = '';
+							frm.id = 'frmDi' + subin + j.toString();
+							frm.className = 'pure-form';
+
+							inpocu = document.createElement('input');
+							inpocu.id = 'ocu' + subin + j.toString();
+							inpocu.type = 'hidden';
+							inpocu.value = resp.Persona.Direccion[j].id.toString()
+							frm.appendChild(inpocu);
+
+							inpzona = document.createElement('input');
+							inpzona.id = 'zona' + subin + j.toString();
+							inpzona.type = 'text';
+							inpzona.value = resp.Persona.Direccion[j].ciudad + '/' + resp.Persona.Direccion[j].zona;
+							frm.appendChild(inpzona);
+
+							inpvia = document.createElement('input');
+							inpvia.id = 'via'+ subin + j.toString();
+							inpvia.type = 'text';
+							inpvia.value = resp.Persona.Direccion[j].via;
+							frm.appendChild(inpvia);
+
+							inppuerta = document.createElement('input');
+							inppuerta.id = 'puerta' + subin + j.toString();
+							inppuerta.type = 'text';
+							inppuerta.value = resp.Persona.Direccion[j].puerta;
+							frm.appendChild(inppuerta);
+
+							document.getElementById('direc').appendChild(frm);
+						};
+
+						for (var k=0;k<resp.Persona.Correo.length; k++){
+							frm2 = document.createElement('form');
+							if (k <= 9) {subin = '0';} else {subin = '';};
+							frm2.id = 'frmM' + subin + k.toString();
+							frm2.className = 'pure-form';
+
+							inpocum = document.createElement('input');
+							inpocum.id = 'ocum' + subin + k.toString();
+							inpocum.type = 'hidden';
+							inpocum.value = resp.Persona.Correo[k].id.toString();
+							frm2.appendChild(inpocum)
+
+							inptipom = document.createElement('input');
+							inptipom.id = 'tipom' + subin + k.toString();
+							inptipom.value = resp.Persona.Correo[k].tipo;
+							frm2.appendChild(inptipom);
+
+							inpmail = document.createElement('input');
+							inpmail.id = 'mail' + subin + k.toString();
+							inpmail.value = resp.Persona.Correo[k].direccion;
+							frm2.appendChild(inpmail);
+
+							document.getElementById('mail').appendChild(frm2);
+						};
+
+						for (var l=0;l<resp.Persona.Telefono.length; l++){
+							frm3 = document.createElement('form');
+							if (l <= 9) { subin = '0';} else { subin = '';};
+							frm3.id = 'frmT' + subin + l.toString();
+							frm3.className = 'pure-form';
+
+							inpocut = document.createElement('input');
+							inpocut.type = 'hidden';
+							inpocut.id = 'ocut' + subin + l.toString();
+							inpocut.value = resp.Persona.Telefono[l].id.toString();
+							frm3.appendChild(inpocut);
+
+							inptipot = document.createElement('input');
+							inptipot.id = 'tipot' + subin + l.toString();
+							inptipot.value = resp.Persona.Telefono[l].tipo
+							frm3.appendChild(inptipot);
+
+							inptel = document.createElement('input');
+							inptel.id = 'tel' + subin + l.toString();
+							inptel.value = resp.Persona.Telefono[l].numero_tel;
+							frm3.appendChild(inptel);
+
+							document.getElementById('telef').appendChild(frm3);
+						}
+					}
+			}
+			xhr.open('POST', '/datosAdicionales/' + idEmpresa);
+			xhr.setRequestHeader('Content-Type','application/json');
+			xhr.send();
+
+			blanquear('telef');
+			blanquear('mail');
+
+			document.getElementById('dtDireccion').style.display = 'inline';
+			document.getElementById('dtCorreo').style.display = 'inline';
+			document.getElementById('dtTelefono').style.display = 'inline';
+		} else {
+			 	
+		}
+	}
+</script>
+<div class="pure-u-1" >
+	<form class="pure-form" method="post" id="frmBusqueda">
+		<fieldset>
+			<legend>B&uacute;squeda</legend>
+			<input type="hidden" id="accionlnk" value="{{ accion }}" >
+			<input type="text" placeholder="NIT" name="nit" id="busNit">
+			<input type="text" placeholder="Nombre Empresa" name="nombre" id="busNombre">
+			<input type="text" placeholder="Sigla" name="sigla" id="busSigla">
+			<button type="button" class="pure-button pure-button-primary" id="btnBuscarEmpresa">B&uacute;squeda</button>
+			<button type="button" class="pure-button" id="btnNueva" >Nueva</button>
+		</fieldset>
+	</form>
+</div>
+{% endblock %}
+
+{% block contenido %}
+<div class="pure-g">
+
+	<div class="pure-u-1" id="dtGrilla">
+		<table class="pure-table" id="gridEmpresa">
+			<thead>
+				<tr>
+					<td>No.</td>
+					<td>NIT</td>
+					<td>Nombre Empresa</td>
+					<td>Sigla</td>
+					<td>&nbsp;</td>
+				</tr>
+			</thead>
+			<tbody id="tbEmp">
+			</tbody>
+		</table>
+	</div>
+	<div class="pure-u-1" id="dtEmpresa"><h4>Datos de la Empresa</h4>
+		<form class="pure-form pure-form-aligned" id="frmEmpresa">
+			<fieldset>
+				<div class="pure-control-group">
+					<input type="hidden" name="idempresa" id="idpersona" value="">
+					<label for="nit">NIT</label>
+					<input id="nit" type="text" name="nit" placeholder="N.I.T." data-valida="Si"
+						data-unico="Si" data-dir="/buscanit/" onblur="buscanit(this)">
+					<span name="msgnit" class="pure-form-message-inline"></span>
+				</div>
+				<div class="pure-control-group">
+					<label for="nombre">Nombre de la Empresa</label>
+					<input type="text" id="nombre" name="nombre" placeholder="Nombre de la Empresa" data-valida="Si" required 
+						data-requerido="Si" data-mensaje="El Nombre de la Empresa es requerido">
+					<span class="pure-form-message-inline"></span>
+				</div>
+				<div class="pure-control-group">
+					<label for="sigla">Sigla</label>
+					<input type="text" id="sigla" name="sigla" placeholder="Sigla">
+					<span class="pure-form-message-inline"></span>
+				</div>
+				<div class="pure-controls">
+					<input type="button" id="btnCrear" name="btnCrear" class="pure-button pure-button-primary"
+					value="Crear" onclick="this.disabled=true; if (!valida(frmEmpresa, '/crearEmpresa')) this.disabled = false">
+					<input type="button" name="btnPlus" onclick="masFormularios()"  id="btnPlus" class="pure-button pure-button-primary" value="+">
+					<input type="button" id="btnModificar" name="btnModificar" class="pure-button pure-button-primary"
+					value="Almacenar" onclick="this.disabled=true; if(!valida(frmEmpresa, '/actualizaEmpresa')) this.disabled = false">
+					<input type="button" name="btnCancelar" id="btnCancelar" class="pure-button pure-button-primary" value="Cancelar" onclick="init()">
+				</div>
+			</fieldset>
+		</form>
+	</div>
+	<div class="pure-u-1" id="dtDireccion">
+		<h4>Direcciones</h4>
+		<div id="direc">
+		<form class="pure-form" id="dir0">
+			<input type="text" id="zona" placeholder="Ciudad/Zona">
+			<input type="text" id="via" placeholder="Av/Calle">
+			<input type="text" id="puerta" placeholder="Puerta">
+			<input type="button" id="btnNuevaDir" value="+" onclick="nuevaDi" class="pure-button pure-button-primary">
+			<input type="button" id="btnEliDir" value="-" onclick="eliDir" class="pure-button pure-button-primary">
+		</form>
+		</div>
+	</div>
+	<div class="pure-u-1" id="dtTelefono">
+		<h4>Tel&eacute;fonos</h4>
+		<div id="telef">
+			<form class="pure-form" id="telf0">
+				<select id="tipoTe">
+					<option value="" selected="selected">&nbsp;</option>
+					<option value="1">Domicilio</option>
+					<option value="2">Celular</option>
+					<option value="3">Trabajo</option>
+				</select>
+				<input type="text" id="telefono" placeholder="Tel&eacute;fono">
+				<input type="button" id="btnNuevoTel" value="+" onclick="nuevoTel" class="pure-button pure-button-primary">
+				<input type="button" id="btnEliTel" value="-" onclick="eliTel" class="pure-button pure-button-primary">
+			</form>
+		</div>
+	</div>
+	<div class="pure-u-1" id="dtCorreo">
+		<h4>Correos Electr&oacute;nicos</h4>
+		<div id="mail">
+			<form class="pure-form" id="mail0">
+				<select id="tipoe" class="pure-imput-1-1">
+					<option>Particular</option>
+					<option>Alterna</option>
+				</select>
+				<span class="pure-form-message-inline"></span>
+				<input type="email" id="email" name="email" placeholder="Correo Electr&oacute;nico">
+				<input type="button" id="btnNuevoMail" value="+" onclick="nuevoMail" class="pure-button pure-button-primary">
+				<input type="button" id="btnEliMail" value="-" onclick="eliMail" class="pure-button pure-button-primary">
+			</form>
+		</div>
+	</div>
+</div>
+{% endblock %}
